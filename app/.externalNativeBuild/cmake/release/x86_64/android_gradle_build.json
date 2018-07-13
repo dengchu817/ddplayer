@@ -1,0 +1,76 @@
+
+{
+	"buildFiles" : [ "/Users/dengchu/test/simple_player/app/CMakeLists.txt" ],
+	"cleanCommands" : 
+	[
+		"/Users/dengchu/Library/Android/sdk/cmake/3.6.4111459/bin/cmake --build /Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/release/x86_64 --target clean"
+	],
+	"cppFileExtensions" : [ "cpp" ],
+	"libraries" : 
+	{
+		"ijkffmpeg-Release-x86_64" : 
+		{
+			"abi" : "x86_64",
+			"artifactName" : "ijkffmpeg",
+			"buildType" : "release",
+			"output" : "ffmpeg-armv7a/output/libijkffmpeg.so",
+			"toolchain" : "1570263071694678202"
+		},
+		"native-player-Release-x86_64" : 
+		{
+			"abi" : "x86_64",
+			"artifactName" : "native-player",
+			"buildCommand" : "/Users/dengchu/Library/Android/sdk/cmake/3.6.4111459/bin/cmake --build /Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/release/x86_64 --target native-player",
+			"buildType" : "release",
+			"files" : 
+			[
+				
+				{
+					"flags" : "  --target=x86_64-none-linux-android --gcc-toolchain=/Users/dengchu/Library/Android/sdk/ndk-bundle/toolchains/x86_64-4.9/prebuilt/darwin-x86_64 --sysroot=/Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot  -Dnative_player_EXPORTS -I../../../../src/main/cpp/ffmpeg-armv7a/output/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/android/support/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++abi/include  -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot/usr/include/x86_64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O2 -DNDEBUG  -fPIC    -c ",
+					"src" : "/Users/dengchu/test/simple_player/app/src/main/cpp/video_player_jni.cpp",
+					"workingDirectory" : "/Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/release/x86_64"
+				},
+				
+				{
+					"flags" : "  --target=x86_64-none-linux-android --gcc-toolchain=/Users/dengchu/Library/Android/sdk/ndk-bundle/toolchains/x86_64-4.9/prebuilt/darwin-x86_64 --sysroot=/Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot  -Dnative_player_EXPORTS -I../../../../src/main/cpp/ffmpeg-armv7a/output/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/android/support/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++abi/include  -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot/usr/include/x86_64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O2 -DNDEBUG  -fPIC    -c ",
+					"src" : "/Users/dengchu/test/simple_player/app/src/main/cpp/jvideo_player.cpp",
+					"workingDirectory" : "/Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/release/x86_64"
+				},
+				
+				{
+					"flags" : "  --target=x86_64-none-linux-android --gcc-toolchain=/Users/dengchu/Library/Android/sdk/ndk-bundle/toolchains/x86_64-4.9/prebuilt/darwin-x86_64 --sysroot=/Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot  -Dnative_player_EXPORTS -I../../../../src/main/cpp/ffmpeg-armv7a/output/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/android/support/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++abi/include  -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot/usr/include/x86_64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O2 -DNDEBUG  -fPIC    -c ",
+					"src" : "/Users/dengchu/test/simple_player/app/src/main/cpp/player/av_message_loop.cpp",
+					"workingDirectory" : "/Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/release/x86_64"
+				},
+				
+				{
+					"flags" : "  --target=x86_64-none-linux-android --gcc-toolchain=/Users/dengchu/Library/Android/sdk/ndk-bundle/toolchains/x86_64-4.9/prebuilt/darwin-x86_64 --sysroot=/Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot  -Dnative_player_EXPORTS -I../../../../src/main/cpp/ffmpeg-armv7a/output/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/android/support/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++abi/include  -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot/usr/include/x86_64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O2 -DNDEBUG  -fPIC    -c ",
+					"src" : "/Users/dengchu/test/simple_player/app/src/main/cpp/player/av_player.cpp",
+					"workingDirectory" : "/Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/release/x86_64"
+				},
+				
+				{
+					"flags" : "  --target=x86_64-none-linux-android --gcc-toolchain=/Users/dengchu/Library/Android/sdk/ndk-bundle/toolchains/x86_64-4.9/prebuilt/darwin-x86_64 --sysroot=/Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot  -Dnative_player_EXPORTS -I../../../../src/main/cpp/ffmpeg-armv7a/output/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/android/support/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++abi/include  -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot/usr/include/x86_64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O2 -DNDEBUG  -fPIC    -c ",
+					"src" : "/Users/dengchu/test/simple_player/app/src/main/cpp/player/av_thread_utils.cpp",
+					"workingDirectory" : "/Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/release/x86_64"
+				},
+				
+				{
+					"flags" : "  --target=x86_64-none-linux-android --gcc-toolchain=/Users/dengchu/Library/Android/sdk/ndk-bundle/toolchains/x86_64-4.9/prebuilt/darwin-x86_64 --sysroot=/Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot  -Dnative_player_EXPORTS -I../../../../src/main/cpp/ffmpeg-armv7a/output/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/android/support/include -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sources/cxx-stl/llvm-libc++abi/include  -isystem /Users/dengchu/Library/Android/sdk/ndk-bundle/sysroot/usr/include/x86_64-linux-android -D__ANDROID_API__=21 -g -DANDROID -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Wformat -Werror=format-security -std=c++11  -O2 -DNDEBUG  -fPIC    -c ",
+					"src" : "/Users/dengchu/test/simple_player/app/src/main/cpp/player/av_read_split.cpp",
+					"workingDirectory" : "/Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/release/x86_64"
+				}
+			],
+			"output" : "/Users/dengchu/test/simple_player/app/build/intermediates/cmake/release/obj/x86_64/libnative-player.so",
+			"toolchain" : "1570263071694678202"
+		}
+	},
+	"toolchains" : 
+	{
+		"1570263071694678202" : 
+		{
+			"cCompilerExecutable" : "/Users/dengchu/Library/Android/sdk/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang",
+			"cppCompilerExecutable" : "/Users/dengchu/Library/Android/sdk/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++"
+		}
+	}
+}

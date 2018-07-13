@@ -1,0 +1,9 @@
+/Users/dengchu/test/simple_player/gen_libs/.externalNativeBuild/cmake/release/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/dengchu/test/simple_player/gen_libs/.externalNativeBuild/cmake/release/arm64-v8a/CMakeFiles/rebuild_cache.dir
+/Users/dengchu/test/simple_player/gen_libs/.externalNativeBuild/cmake/release/arm64-v8a/ijksdl/CMakeFiles/edit_cache.dir
+/Users/dengchu/test/simple_player/gen_libs/.externalNativeBuild/cmake/release/arm64-v8a/ijksdl/CMakeFiles/rebuild_cache.dir
+/Users/dengchu/test/simple_player/gen_libs/.externalNativeBuild/cmake/release/arm64-v8a/ijksdl/CMakeFiles/ijksdl.dir
+/Users/dengchu/test/simple_player/gen_libs/.externalNativeBuild/cmake/release/arm64-v8a/ijkyuv/CMakeFiles/yuv_shared.dir
+/Users/dengchu/test/simple_player/gen_libs/.externalNativeBuild/cmake/release/arm64-v8a/ijkyuv/CMakeFiles/edit_cache.dir
+/Users/dengchu/test/simple_player/gen_libs/.externalNativeBuild/cmake/release/arm64-v8a/ijkyuv/CMakeFiles/rebuild_cache.dir
+/Users/dengchu/test/simple_player/gen_libs/.externalNativeBuild/cmake/release/arm64-v8a/ijkyuv/CMakeFiles/yuv.dir
