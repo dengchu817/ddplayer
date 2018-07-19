@@ -17,12 +17,15 @@ extern "C"{
 struct ffplayer{
 
     ffplayer(){
+        display_disable = 0;
         decoder_reorder_pts = -1;
         opensles = false;
         pf_playback_rate_changed = 0;
         pf_playback_rate = 1.0f;
         pf_playback_volume_changed = 0;
         pf_playback_volume = 1.0f;
+        framedrop = -1;
+        overlay_format = SDL_FCC__GLES2;
     }
 
     const AVClass *av_class;
@@ -40,7 +43,8 @@ struct ffplayer{
     float pf_playback_rate;
     int pf_playback_volume_changed;
     float pf_playback_volume;
-
+    int framedrop;
+    int overlay_format;
 };
 
 #endif //SIMPLE_PLAYER_FFPLAYER_OPTION_H

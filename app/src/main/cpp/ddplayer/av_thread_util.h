@@ -13,12 +13,10 @@ public:
     av_thread_util();
     ~av_thread_util();
 
-public:
+protected:
     void start_thread();
     void stop_thread();
-public:
     virtual void do_cycle() = 0;
-public:
     int m_abort_request;
 private:
     static void* cycle(void* arg);

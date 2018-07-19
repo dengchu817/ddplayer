@@ -21,10 +21,7 @@ extern "C" {
 #endif//__cplusplus
 
 #include "av_thread_util.h"
-#include "av_cmdutils.h"
-
-typedef int(*find_stream_callback)(void* usr, AVFormatContext* ic, int stream_index);
-typedef int(*read_frame_callback)(void* usr, AVPacket* pkt);
+#include "av_player_def.h"
 
 class av_read_input : public av_thread_util {
 public:
@@ -35,15 +32,16 @@ public:
     void stream_open(std::string url, AVInputFormat *iformat);
     void seek(int64_t pos);
     void stream_close();
-    void init(find_stream_callback stream_cbk, read_frame_callback frame_cbk);
-    static int decode_interrupt_cb(void* usr);
-public:
+    void init(dd_callback cbk);
+    int resume_read();
+
+protected:
     void do_cycle();
 private:
     int is_realtime(AVFormatContext *s);
+    static int decode_interrupt_cb(void* usr);
 private:
-    find_stream_callback m_stream_cbk;
-    read_frame_callback m_frame_cbk;
+    dd_callback m_read_input_cbk;
     void* m_player;
     std::string m_url;
     AVInputFormat* m_iformat;

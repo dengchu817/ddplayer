@@ -19,6 +19,7 @@ public:
 
 public:
     void start(std::string url);
+    void setsurface(JNIEnv* env, jobject obj);
     void release();
     void putMessage(AvMessage* msg);
 

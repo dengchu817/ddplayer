@@ -77,3 +77,8 @@ void jvideo_player::do_cycle() {
 void jvideo_player::start(std::string url) {
     player->start(url);
 }
+
+void jvideo_player::setsurface(JNIEnv *env, jobject obj) {
+    SDL_Vout* vout = player->get_vout();
+    SDL_VoutAndroid_SetAndroidSurface(env, vout, obj);
+}

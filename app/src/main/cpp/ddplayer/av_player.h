@@ -34,20 +34,21 @@ public:
     int release();
 
     void start(std::string url);
-    //find_stream_info callback
-    static int find_stream_cbk(void* usr, AVFormatContext* ic, int stream_index);
 
-    //av_read_frame callback
-    static int read_frame_cbk(void* usr, AVPacket* st);
-
+    //ffplayer option
     void set_option(int opt_category, const char *name, const char *value);
     AVDictionary* get_opt_dict(int opt_category);
-
     ffplayer* get_ffplayer();
-    PacketQueue* get_audio_packetqueue();
+    Clock* get_video_clock();
+    Clock* get_audio_clock();
+    SDL_Vout* get_vout();
 private:
-    int stream_component_open(AVFormatContext* ic, int stream_index);
-    int put_read_packet(AVPacket* st);
+    static int dd_callback(void* player, int type, void* in_data, void** out_data);
+    int do_dd_callback(int type, void* in_data, void** out_data);
+    int stream_component_open(AVFormatContext* st, int stream_index);
+
+public:
+    int                 m_av_sync_type;
 private:
     std::string         m_url;
     av_read_input*      m_read_in;
@@ -56,7 +57,6 @@ private:
     av_audio_output*    m_audio_out;
     av_video_decoder*   m_video_decoder;
     av_video_output*    m_video_out;
-
 
     ffplayer*    m_ffp;
     /* format/codec options */

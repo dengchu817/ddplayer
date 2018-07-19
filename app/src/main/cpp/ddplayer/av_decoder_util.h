@@ -17,6 +17,7 @@ extern "C"{
 
 #include "av_packet_queue.h"
 #include "ffplayer_option.h"
+#include "av_player_def.h"
 
 typedef struct Decoder {
     AVPacket pkt;
@@ -39,11 +40,18 @@ public:
     ~av_decoder_util();
 
 public:
-    void init();
+    void init(dd_callback decoder_cb);
+    FrameQueue* get_frame_queue(){ return &m_frame_queue;};
+    void decoder_init(AVCodecContext *avctx);
+    int feed(AVPacket* pkt);
+
+protected:
     int decoder_decode_frame(Decoder *d, AVFrame *frame, AVSubtitle *sub);
-    PacketQueue* get_packetqueue();
-private:
-    PacketQueue m_queue;
+protected:
+    Decoder m_d;
+    dd_callback m_cbk;
+    PacketQueue m_packet_queue;
+    FrameQueue m_frame_queue;
     void* m_player;
 };
 

@@ -48,7 +48,16 @@ extern "C"{
 #define FFP_OPT_CATEGORY_PLAYER 4
 #define FFP_OPT_CATEGORY_SWR    5
 
-
+///////////////////////////////callback///////////////////////////////////////
+typedef int(*dd_callback)(void* player, int type, void* in_data, void** out_data);
+#define DD_CONTINUE_READ                            1
+#define DD_FIND_AUDIO_STREAM                        2
+#define DD_FIND_VIDEO_STREAM                        3
+#define DD_READ_AUDIO_FRAME                         4
+#define DD_READ_VIDEO_FRAME                         5
+#define DD_GET_VIDEO_SDL_OUT                        6
+#define DD_GET_VIDEO_FRAMEQUEUE                     8
+#define DD_GET_VIDEO_PACKETQUEUE                    9
 ///////////////////////////////audioout///////////////////////////////////////
 typedef struct AudioParams {
     int freq;
@@ -97,13 +106,17 @@ typedef struct FrameQueue {
     PacketQueue *pktq;
 } FrameQueue;
 
+
+
+///////////////////////////////clock///////////////////////////////////////////
 enum {
     AV_SYNC_AUDIO_MASTER, /* default choice */
     AV_SYNC_VIDEO_MASTER,
     AV_SYNC_EXTERNAL_CLOCK, /* synchronize to an external clock */
 };
-
-///////////////////////////////clock///////////////////////////////////////////
+enum {
+    SHOW_MODE_NONE = -1, SHOW_MODE_VIDEO = 0, SHOW_MODE_WAVES, SHOW_MODE_RDFT, SHOW_MODE_NB
+} ;
 typedef struct Clock {
     double pts;           /* clock base */
     double pts_drift;     /* clock base minus time at which we updated the clock */
@@ -113,4 +126,15 @@ typedef struct Clock {
     int paused;
     int *queue_serial;    /* pointer to the current packet queue serial, used for obsolete clock detection */
 } Clock;
+
+#define AV_NOSYNC_THRESHOLD 10.0
+#define REFRESH_RATE 0.01
+#define AV_SYNC_THRESHOLD_MIN 0.04
+/* AV sync correction is done if above the maximum AV sync threshold */
+#define AV_SYNC_THRESHOLD_MAX 0.1
+/* If a frame duration is longer than this, it will not be duplicated to compensate AV sync */
+#define AV_SYNC_FRAMEDUP_THRESHOLD 0.1
+/* no AV correction is done if too big error */
+#define AV_NOSYNC_THRESHOLD 10.0
+
 #endif //SIMPLE_PLAYER_PLAYERDEF_H

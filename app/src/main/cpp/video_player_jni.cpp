@@ -29,6 +29,13 @@ static jvideo_player* getVideoPlayer(JNIEnv* env, jobject thiz){
     return (jvideo_player*)env->GetLongField(thiz, g_fields.context);
 }
 
+static void Jni_setSurface(JNIEnv* env, jobject thiz, jobject obj){
+    jvideo_player* player = getVideoPlayer(env, thiz);
+    if (player) {
+        player->setsurface(env, obj);
+    }
+}
+
 static void Jni_setDataSource(JNIEnv* env, jobject thiz, jstring path, jobjectArray keys, jobjectArray values){
     jvideo_player* player = getVideoPlayer(env, thiz);
     if (player){
@@ -68,6 +75,7 @@ static void Jni__nativeFinalize(JNIEnv* env, jobject thiz){
 
 static JNINativeMethod g_methods[] = {
         {"_setDataSource", "(Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V", (void *) Jni_setDataSource},
+        {"_setSurface", "(Landroid/view/Surface;)V", (void*) Jni_setSurface},
         {"_start", "()V", (void*)Jni_start},
         {"_nativeSetup","()V", (void*)Jni_nativeSetup},
         {"_nativeInit", "()V", (void*)Jni_nativeInit},

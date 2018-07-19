@@ -4,10 +4,12 @@
 
 #include "av_decoder_util.h"
 #include "av_player.h"
+#include "av_frame_queue.h"
 
 extern AVPacket flush_pkt;
 av_decoder_util::av_decoder_util(void* player) {
     m_player = player;
+    m_cbk = NULL;
 }
 
 av_decoder_util::~av_decoder_util() {
@@ -62,8 +64,11 @@ int av_decoder_util::decoder_decode_frame(Decoder *d, AVFrame *frame, AVSubtitle
         }
 
         do {
-            if (d->queue->nb_packets == 0)
-                SDL_CondSignal(d->empty_queue_cond);
+            if (d->queue->nb_packets == 0) {
+                if (m_player && m_cbk)
+                    m_cbk(m_player, DD_CONTINUE_READ, NULL, NULL);
+                //SDL_CondSignal(d->empty_queue_cond);
+            }
             if (d->packet_pending) {
                 av_packet_move_ref(&pkt, &d->pkt);
                 d->packet_pending = 0;
@@ -104,12 +109,25 @@ int av_decoder_util::decoder_decode_frame(Decoder *d, AVFrame *frame, AVSubtitle
 
 }
 
-void av_decoder_util::init() {
-    packet_queue_init(&m_queue);
+void av_decoder_util::init(dd_callback decoder_cb) {
+    m_cbk = decoder_cb;
+    packet_queue_init(&m_packet_queue);
+    frame_queue_init(&m_frame_queue, &m_packet_queue, SAMPLE_QUEUE_SIZE, 1);
     return;
 }
 
-PacketQueue* av_decoder_util::get_packetqueue() {
-    return &m_queue;
+void av_decoder_util::decoder_init(AVCodecContext *avctx) {
+    memset(&m_d, 0, sizeof(Decoder));
+    m_d.avctx = avctx;
+    m_d.queue = &m_packet_queue;
+    m_d.empty_queue_cond = NULL;
+    m_d.start_pts = AV_NOPTS_VALUE;
+    m_d.pkt_serial = -1;
+    return;
 }
+
+int av_decoder_util::feed(AVPacket *pkt) {
+    return packet_queue_put(&m_packet_queue,pkt);
+}
+
 

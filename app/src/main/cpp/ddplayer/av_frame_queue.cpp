@@ -136,3 +136,11 @@ int64_t frame_queue_last_pos(FrameQueue *f)
     else
         return -1;
 }
+
+void free_picture(Frame *vp)
+{
+    if (vp->bmp) {
+        SDL_VoutFreeYUVOverlay(vp->bmp);
+        vp->bmp = NULL;
+    }
+}

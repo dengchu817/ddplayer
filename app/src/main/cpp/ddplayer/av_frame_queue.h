@@ -35,5 +35,7 @@ int frame_queue_nb_remaining(FrameQueue *f);
 /* return last shown position */
 int64_t frame_queue_last_pos(FrameQueue *f);
 
+void free_picture(Frame *vp);
+
 #endif //SIMPLE_PLAYER_AV_FRAME_QUEUE_H
 

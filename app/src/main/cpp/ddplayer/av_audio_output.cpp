@@ -10,14 +10,15 @@
 
 av_audio_output::av_audio_output(void* player) {
     m_player = player;
+    m_cbk = NULL;
     m_aout = NULL;
+    m_frame_queue_ref = NULL;
     m_left_volume = 1;
     m_right_volume = 1;
     m_abort_request = 0;
     m_audio_buf_index = 0;
     m_audio_buf_index = 0;
     m_muted = false;
-    m_audio_volume = SDL_MIX_MAXVOLUME;
     m_paused = false;
 }
 
@@ -25,7 +26,8 @@ av_audio_output::~av_audio_output() {
 
 }
 
-void av_audio_output::init() {
+void av_audio_output::init(dd_callback cbk, FrameQueue* ref) {
+    m_cbk = cbk;
     ffplayer* ffp = ((av_player*)m_player)->get_ffplayer();
     if (ffp->opensles)
         m_aout = SDL_AoutAndroid_CreateForOpenSLES();
@@ -33,22 +35,30 @@ void av_audio_output::init() {
         m_aout = SDL_AoutAndroid_CreateForAudioTrack();
     if (m_aout)
         SDL_AoutSetStereoVolume(m_aout, m_left_volume, m_right_volume);
-    frame_queue_init(&m_frame_queue, ((av_player*)m_player)->get_audio_packetqueue(),SAMPLE_QUEUE_SIZE,1);
-    init_clock(&m_clock, 0);
+
+    m_frame_queue_ref = ref;
+    init_clock(&m_clock, &ref->pktq->serial);
 }
 
 void av_audio_output::release() {
 
 }
 
-int av_audio_output::audio_open(int64_t wanted_channel_layout, int wanted_nb_channels, int wanted_sample_rate)
-{
+int av_audio_output::audio_open(int64_t wanted_channel_layout, int wanted_nb_channels, int wanted_sample_rate) {
+    int ret = do_audio_open(wanted_channel_layout, wanted_nb_channels, wanted_sample_rate, &m_audio_tgt);
+    m_audio_src = m_audio_tgt;
+    m_audio_buf_index = 0;
+    m_audio_buf_index = 0;
+    SDL_AoutPauseAudio(m_aout, 0);
+    return ret;
+}
+
+int av_audio_output::do_audio_open(int64_t wanted_channel_layout, int wanted_nb_channels,
+                                   int wanted_sample_rate, struct AudioParams *audio_hw_params) {
     SDL_AudioSpec wanted_spec, spec;
     const char *env;
     static const int next_nb_channels[] = {0, 0, 1, 6, 2, 6, 4, 6};
-#ifdef FFP_MERGE
-    static const int next_sample_rates[] = {0, 44100, 48000, 96000, 192000};
-#endif
+
     static const int next_sample_rates[] = {0, 44100, 48000};
     int next_sample_rate_idx = FF_ARRAY_ELEMS(next_sample_rates) - 1;
 
@@ -107,20 +117,18 @@ int av_audio_output::audio_open(int64_t wanted_channel_layout, int wanted_nb_cha
         }
     }
 
-    m_audio_tgt.fmt = AV_SAMPLE_FMT_S16;
-    m_audio_tgt.freq = spec.freq;
-    m_audio_tgt.channel_layout = wanted_channel_layout;
-    m_audio_tgt.channels =  spec.channels;
-    m_audio_tgt.frame_size = av_samples_get_buffer_size(NULL, m_audio_tgt.channels, 1, m_audio_tgt.fmt, 1);
-    m_audio_tgt.bytes_per_sec = av_samples_get_buffer_size(NULL, m_audio_tgt.channels, m_audio_tgt.freq, m_audio_tgt.fmt, 1);
-    if (m_audio_tgt.bytes_per_sec <= 0 || m_audio_tgt.frame_size <= 0) {
+    audio_hw_params->fmt = AV_SAMPLE_FMT_S16;
+    audio_hw_params->freq = spec.freq;
+    audio_hw_params->channel_layout = wanted_channel_layout;
+    audio_hw_params->channels =  spec.channels;
+    audio_hw_params->frame_size = av_samples_get_buffer_size(NULL, audio_hw_params->channels, 1, audio_hw_params->fmt, 1);
+    audio_hw_params->bytes_per_sec = av_samples_get_buffer_size(NULL, audio_hw_params->channels, audio_hw_params->freq, audio_hw_params->fmt, 1);
+    if (audio_hw_params->bytes_per_sec <= 0 || audio_hw_params->frame_size <= 0) {
         av_log(NULL, AV_LOG_ERROR, "av_samples_get_buffer_size failed\n");
         return -1;
     }
-    m_audio_src = m_audio_tgt;
-    m_audio_hw_buf_size = spec.size;
-    SDL_AoutSetDefaultLatencySeconds(m_aout, ((double)(2 * spec.size)) / m_audio_tgt.bytes_per_sec);
-    SDL_AoutPauseAudio(m_aout, 0);
+
+    SDL_AoutSetDefaultLatencySeconds(m_aout, ((double)(2 * spec.size)) / audio_hw_params->bytes_per_sec);
     return spec.size;
 }
 
@@ -166,12 +174,12 @@ void av_audio_output::do_sdl_audio_callback(Uint8 *stream, int len) {
         len1 = m_audio_buf_size - m_audio_buf_index;
         if (len1 > len)
             len1 = len;
-        if (!m_muted && m_audio_buf && m_audio_volume == SDL_MIX_MAXVOLUME)
+        if (!m_muted && m_audio_buf /*&& m_audio_volume == SDL_MIX_MAXVOLUME*/)
             memcpy(stream, (uint8_t *)m_audio_buf + m_audio_buf_index, len1);
         else {
             memset(stream, 0, len1);
-            if (!m_muted && m_audio_buf)
-                SDL_MixAudio(stream, (uint8_t *)m_audio_buf + m_audio_buf_index, len1, m_audio_volume);
+//            if (!m_muted && m_audio_buf)
+//                SDL_MixAudio(stream, (uint8_t *)m_audio_buf + m_audio_buf_index, len1, m_audio_volume);
         }
         len -= len1;
         stream += len1;
@@ -180,7 +188,7 @@ void av_audio_output::do_sdl_audio_callback(Uint8 *stream, int len) {
     int audio_write_buf_size = m_audio_buf_size - m_audio_buf_index;
     /* Let's assume the audio driver that is used by SDL has two periods. */
     if (!isnan(audio_clock)) {
-        set_clock_at(&m_clock, audio_clock - (double)(2 * m_audio_hw_buf_size + audio_write_buf_size) / m_audio_tgt.bytes_per_sec, audio_clock_serial, audio_callback_time / 1000000.0);
+        set_clock_at(&m_clock, audio_clock - (double)(audio_write_buf_size) / m_audio_tgt.bytes_per_sec - SDL_AoutGetLatencySeconds(m_aout), audio_clock_serial, audio_callback_time / 1000000.0);
         //sync_clock_to_slave(&is->extclk, &is->audclk);
     }
     return;
@@ -198,17 +206,11 @@ int av_audio_output::audio_decode_frame(int *audio_size, int* audio_clock_serial
         return -1;
 
     do {
-#if defined(_WIN32)
-        while (frame_queue_nb_remaining(&is->sampq) == 0) {
-            if ((av_gettime_relative() - audio_callback_time) > 1000000LL * is->audio_hw_buf_size / is->audio_tgt.bytes_per_sec / 2)
-                return -1;
-            av_usleep (1000);
-        }
-#endif
-        if (!(af = frame_queue_peek_readable(&m_frame_queue)))
+        if (!(af = frame_queue_peek_readable(m_frame_queue_ref)))
             return -1;
-        frame_queue_next(&m_frame_queue);
-    } while (af->serial != ((av_player*)m_player)->get_audio_packetqueue()->serial);
+        frame_queue_next(m_frame_queue_ref);
+
+    } while (af->serial != m_frame_queue_ref->pktq->serial);
 
     data_size = av_samples_get_buffer_size(NULL, af->frame->channels,
                                            af->frame->nb_samples,
@@ -286,15 +288,6 @@ int av_audio_output::audio_decode_frame(int *audio_size, int* audio_clock_serial
     else
         *audio_clock = NAN;
     *audio_clock_serial = af->serial;
-#ifdef DEBUG
-    {
-        static double last_clock;
-        printf("audio: delay=%0.3f clock=%0.3f clock0=%0.3f\n",
-               is->audio_clock - last_clock,
-               is->audio_clock, audio_clock0);
-        last_clock = is->audio_clock;
-    }
-#endif
     return resampled_data_size;
 }
 
@@ -306,7 +299,7 @@ int av_audio_output::synchronize_audio(int nb_samples) {
 //        double diff, avg_diff;
 //        int min_nb_samples, max_nb_samples;
 //
-//        diff = get_clock(&is->audclk) - get_master_clock(is);
+//        diff = get_av_clock(&is->audclk) - get_master_clock(is);
 //
 //        if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD) {
 //            is->audio_diff_cum = diff + is->audio_diff_avg_coef * is->audio_diff_cum;
@@ -337,4 +330,5 @@ int av_audio_output::synchronize_audio(int nb_samples) {
 
     return wanted_nb_samples;
 }
+
 

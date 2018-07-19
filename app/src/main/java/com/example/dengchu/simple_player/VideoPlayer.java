@@ -2,6 +2,8 @@ package com.example.dengchu.simple_player;
 
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.Surface;
+import android.view.SurfaceView;
 
 /**
  * Created by dengchu on 2018/6/26.
@@ -26,7 +28,11 @@ public class VideoPlayer {
 
     public void setDataSource(String path){
         mPath = path;
-            _setDataSource(mPath, null,null);
+        _setDataSource(mPath, null,null);
+    }
+
+    public void setSurface(Surface surface){
+        _setSurface(surface);
     }
 
     public void start(){
@@ -42,6 +48,8 @@ public class VideoPlayer {
     }
 ////////////////////////////native method//////////////////////////////////////////////////////
     private native final void _setDataSource(String path, String[] keys, String[] values);
+
+    private native final void _setSurface(Surface surface);
 
     private native final void _start();
 

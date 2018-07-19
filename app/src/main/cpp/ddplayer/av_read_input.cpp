@@ -1,15 +1,14 @@
 //
 // Created by 邓楚 on 2018/6/29.
 //
-
+#include "av_cmdutils.h"
 #include "av_read_input.h"
 #include "av_player.h"
 #include "av_player_def.h"
 
 av_read_input::av_read_input(void* player) {
     m_player = player;
-    m_iformat = NULL;
-    m_stream_cbk = NULL;
+    m_read_input_cbk = NULL;
     m_iformat = NULL;
     m_url = "";
     m_seek_pos = 0;
@@ -22,9 +21,8 @@ av_read_input::~av_read_input() {
 
 }
 
-void av_read_input::init(find_stream_callback stream_cbk, read_frame_callback frame_cbk) {
-    m_stream_cbk = stream_cbk;
-    m_frame_cbk = frame_cbk;
+void av_read_input::init(dd_callback cbk) {
+    m_read_input_cbk = cbk;
 }
 
 int av_read_input::is_realtime(AVFormatContext *s) {
@@ -61,12 +59,11 @@ void av_read_input::do_cycle() {
     AVDictionaryEntry *t = NULL;
     AVDictionary *format_opts = NULL, *codec_opts = NULL;
     int seek_by_bytes = -1;
-    //ffplayer_option* array_opt;
     int video_stream =-1, audio_stream = -1, eof = 0;
     int scan_all_pmts_set = 0;
     int64_t pkt_ts;
     int seek_flags = 0;
-    if (!m_stream_cbk || !m_frame_cbk || !m_player)
+    if (!m_read_input_cbk || !m_player)
         goto fail;
 
     format_opts = ((av_player *) m_player)->get_opt_dict(FFP_OPT_CATEGORY_FORMAT);
@@ -155,11 +152,15 @@ void av_read_input::do_cycle() {
     /* open the streams */
 
     if (st_index[AVMEDIA_TYPE_AUDIO] >= 0) {
-        video_stream = m_stream_cbk(m_player, ic, st_index[AVMEDIA_TYPE_AUDIO]);
+        ic->opaque = &st_index[AVMEDIA_TYPE_AUDIO];
+        m_read_input_cbk(m_player, DD_FIND_AUDIO_STREAM, ic, NULL);
+        audio_stream = st_index[AVMEDIA_TYPE_AUDIO];
     }
 
     if (st_index[AVMEDIA_TYPE_VIDEO] >= 0) {
-        audio_stream = m_stream_cbk(m_player, ic, st_index[AVMEDIA_TYPE_VIDEO]);
+        ic->opaque = &st_index[AVMEDIA_TYPE_VIDEO];
+        m_read_input_cbk(m_player, DD_FIND_VIDEO_STREAM, ic, NULL);
+        video_stream = st_index[AVMEDIA_TYPE_VIDEO];
     }
 
     if (video_stream < 0 && audio_stream < 0) {
@@ -209,10 +210,10 @@ void av_read_input::do_cycle() {
         if (ret < 0) {
             if ((ret == AVERROR_EOF || avio_feof(ic->pb)) && !eof) {
                 if (video_stream >= 0)
-                    m_frame_cbk(m_player, pkt);
+                    m_read_input_cbk(m_player, DD_READ_VIDEO_FRAME, pkt, NULL);
                     //packet_queue_put_nullpacket(&is->videoq, is->video_stream);
                 if (audio_stream >= 0)
-                    m_frame_cbk(m_player, pkt);
+                    m_read_input_cbk(m_player, DD_READ_AUDIO_FRAME, pkt, NULL);
                     //packet_queue_put_nullpacket(&is->audioq, is->audio_stream);
 
                 eof = 1;
@@ -228,7 +229,7 @@ void av_read_input::do_cycle() {
         }
 
         if (pkt->stream_index == audio_stream || pkt->stream_index == video_stream) {
-            m_frame_cbk(m_player, pkt);
+            m_read_input_cbk(m_player, pkt->stream_index == audio_stream?DD_READ_AUDIO_FRAME:DD_READ_VIDEO_FRAME, pkt, NULL);
         } else {
             av_packet_unref(pkt);
         }
@@ -250,4 +251,9 @@ void av_read_input::seek(int64_t pos) {
 
 void av_read_input::stream_close() {
 
+}
+
+int av_read_input::resume_read() {
+    SDL_CondSignal(m_continue_read_thread);
+    return 0;
 }

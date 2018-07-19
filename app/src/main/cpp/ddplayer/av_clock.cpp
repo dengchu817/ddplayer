@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include "av_clock.h"
+
 double get_clock(Clock *c)
 {
     if (*c->queue_serial != c->serial)
@@ -42,4 +43,47 @@ void init_clock(Clock *c, int *queue_serial)
     c->paused = 0;
     c->queue_serial = queue_serial;
     set_clock(c, NAN, -1);
+}
+
+void sync_clock_to_slave(Clock *c, Clock *slave)
+{
+    double clock = get_clock(c);
+    double slave_clock = get_clock(slave);
+    if (!isnan(slave_clock) && (isnan(clock) || fabs(clock - slave_clock) > AV_NOSYNC_THRESHOLD))
+        set_clock(c, slave_clock, slave->serial);
+}
+
+int get_master_sync_type(av_player* player) {
+    if (player->m_av_sync_type == AV_SYNC_VIDEO_MASTER) {
+        if (player->get_video_clock())
+            return AV_SYNC_VIDEO_MASTER;
+        else
+            return AV_SYNC_AUDIO_MASTER;
+    } else if (player->m_av_sync_type == AV_SYNC_AUDIO_MASTER) {
+        if (player->get_audio_clock())
+            return AV_SYNC_AUDIO_MASTER;
+        else
+            return AV_SYNC_EXTERNAL_CLOCK;
+    } else {
+        return AV_SYNC_EXTERNAL_CLOCK;
+    }
+}
+
+/* get the current master clock value */
+double get_master_clock(av_player *player)
+{
+    double val;
+
+    switch (get_master_sync_type(player)) {
+        case AV_SYNC_VIDEO_MASTER:
+            val = get_clock(player->get_video_clock());
+            break;
+        case AV_SYNC_AUDIO_MASTER:
+            val = get_clock(player->get_audio_clock());
+            break;
+//        default:
+//            val = get_av_clock(&is->extclk);
+//            break;
+    }
+    return val;
 }

@@ -4,6 +4,7 @@
 
 #include "av_player.h"
 #include "av_player_def.h"
+#include "av_cmdutils.h"
 
 extern AVPacket flush_pkt;
 av_player::av_player() {
@@ -15,6 +16,7 @@ av_player::av_player() {
     m_sws_dict = NULL;
     m_player_opts = NULL;
     m_swr_opts = NULL;
+    m_av_sync_type = AV_SYNC_AUDIO_MASTER;
 }
 
 av_player::~av_player() {
@@ -31,13 +33,19 @@ int av_player::init() {
     m_ffp = new ffplayer();
 
     m_read_in = new av_read_input(this);
-    m_read_in->init(find_stream_cbk, read_frame_cbk);
+    m_read_in->init(dd_callback);
 
     m_audio_decoder = new av_audio_decoder(this);
-    m_audio_decoder->init();
+    m_audio_decoder->init(dd_callback);
 
     m_audio_out = new av_audio_output(this);
-    m_audio_out->init();
+    m_audio_out->init(dd_callback, m_audio_decoder->get_frame_queue());
+
+    m_video_decoder = new av_video_decoder(this);
+    m_video_decoder->init(dd_callback);
+
+    m_video_out = new av_video_output(this);
+    m_video_out->init(dd_callback, m_video_decoder->get_frame_queue());
     return 0;
 }
 
@@ -70,26 +78,6 @@ ffplayer *av_player::get_ffplayer() {
     return m_ffp;
 }
 
-int av_player::read_frame_cbk(void *usr, AVPacket *pkt) {
-    av_player* pobj = (av_player*)usr;
-    if (pobj){
-        return pobj->put_read_packet(pkt);
-    }
-    return -1;
-}
-
-int av_player::put_read_packet(AVPacket *st) {
-    return 0;
-}
-
-int av_player::find_stream_cbk(void *usr,AVFormatContext* ic, int stream_index) {
-    av_player* pobj = (av_player*)usr;
-    if (pobj){
-        return pobj->stream_component_open(ic, stream_index);
-    }
-    return -1;
-}
-
 int av_player::stream_component_open(AVFormatContext* ic, int stream_index) {
     AVCodecContext *avctx;
     AVCodec *codec = NULL;
@@ -101,7 +89,7 @@ int av_player::stream_component_open(AVFormatContext* ic, int stream_index) {
     int ret = 0;
     int stream_lowres = 0;//ffp->lowres;
 
-    if (stream_index < 0 || stream_index >= ic->nb_streams)
+    if (!ic || stream_index < 0)
         return -1;
     avctx = avcodec_alloc_context3(NULL);
     if (!avctx)
@@ -164,37 +152,26 @@ int av_player::stream_component_open(AVFormatContext* ic, int stream_index) {
     ic->streams[stream_index]->discard = AVDISCARD_DEFAULT;
     switch (avctx->codec_type) {
         case AVMEDIA_TYPE_AUDIO:
-#if CONFIG_AVFILTER
-            {
-            AVFilterContext *sink;
-
-            is->audio_filter_src.freq           = avctx->sample_rate;
-            is->audio_filter_src.channels       = avctx->channels;
-            is->audio_filter_src.channel_layout = get_valid_channel_layout(avctx->channel_layout, avctx->channels);
-            is->audio_filter_src.fmt            = avctx->sample_fmt;
-            SDL_LockMutex(ffp->af_mutex);
-            if ((ret = configure_audio_filters(ffp, ffp->afilters, 0)) < 0) {
-                SDL_UnlockMutex(ffp->af_mutex);
-                goto fail;
-            }
-            ffp->af_changed = 0;
-            SDL_UnlockMutex(ffp->af_mutex);
-            sink = is->out_audio_filter;
-            sample_rate    = av_buffersink_get_sample_rate(sink);
-            nb_channels    = av_buffersink_get_channels(sink);
-            channel_layout = av_buffersink_get_channel_layout(sink);
-        }
-#else
             sample_rate    = avctx->sample_rate;
             nb_channels    = avctx->channels;
             channel_layout = avctx->channel_layout;
-#endif
 
             /* prepare audio output */
-            m_audio_out->audio_open(sample_rate, nb_channels,channel_layout);
+            if (m_audio_out)
+                m_audio_out->audio_open(sample_rate, nb_channels,channel_layout);
+            if (m_audio_decoder){
+                m_audio_decoder->decoder_init(avctx);
+                m_audio_decoder->start();
+            }
+
             break;
         case AVMEDIA_TYPE_VIDEO:
-
+            if (m_video_out)
+                m_video_out->start();
+            if (m_video_decoder){
+                m_video_decoder->decoder_init(avctx);
+                m_video_decoder->start(ic, ic->streams[stream_index]);
+            }
 
             break;
         case AVMEDIA_TYPE_SUBTITLE:
@@ -213,9 +190,46 @@ out:
     return ret;
 }
 
-PacketQueue* av_player::get_audio_packetqueue() {
-    if (m_audio_decoder)
-        return m_audio_decoder->get_packetqueue();
-    return NULL;
+int av_player::dd_callback(void *player, int type , void* in_data, void** out_data) {
+    av_player* obj = (av_player*)player;
+    if (obj){
+        return obj->do_dd_callback(type, in_data, out_data);
+    }
+    return 0;
+}
+
+int av_player::do_dd_callback(int type, void* in_data, void** out_data) {
+    if (type == DD_FIND_AUDIO_STREAM || type == DD_FIND_VIDEO_STREAM) {
+        AVFormatContext* ic = (AVFormatContext*) in_data;
+        int stream_index = *((int*)ic->opaque);
+        stream_component_open(ic, stream_index);
+    }else if (type == DD_READ_AUDIO_FRAME && m_audio_decoder){
+        m_audio_decoder->feed((AVPacket*)in_data);
+    }else if (type == DD_READ_VIDEO_FRAME){
+        m_video_decoder->feed((AVPacket*)in_data);
+    }else if (type == DD_CONTINUE_READ && m_read_in) {
+        m_read_in->resume_read();
+    } else if (type == DD_GET_VIDEO_SDL_OUT && m_video_out){
+        *out_data = get_vout();
+    }
+    return 0;
+}
+
+Clock *av_player::get_video_clock() {
+    if (m_video_out)
+        return m_video_out->get_av_clock();
+    return nullptr;
+}
+
+Clock *av_player::get_audio_clock() {
+    if (m_audio_out)
+        return m_audio_out->get_av_clock();
+    return nullptr;
+}
+
+SDL_Vout* av_player::get_vout(){
+    if (m_video_out)
+        return m_video_out->get_vout();
+    return nullptr;
 }
 

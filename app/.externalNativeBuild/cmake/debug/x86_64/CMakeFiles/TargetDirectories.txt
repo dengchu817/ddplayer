@@ -1,3 +1,0 @@
-/Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/debug/x86_64/CMakeFiles/edit_cache.dir
-/Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/debug/x86_64/CMakeFiles/rebuild_cache.dir
-/Users/dengchu/test/simple_player/app/.externalNativeBuild/cmake/debug/x86_64/CMakeFiles/native-player.dir
