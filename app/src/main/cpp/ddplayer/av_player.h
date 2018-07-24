@@ -27,10 +27,10 @@ extern "C" {
 
 class av_player{
 public:
-    av_player();
+    av_player(void* jplayer);
     ~av_player();
 public:
-    int init();
+    int init(av_player_callback cbk);
     int release();
 
     void start(std::string url);
@@ -47,12 +47,12 @@ private:
     int do_dd_callback(int type, void* in_data, void** out_data);
     int stream_component_open(AVFormatContext* st, int stream_index);
 
-public:
-    int                 m_av_sync_type;
 private:
     std::string         m_url;
-    av_read_input*      m_read_in;
+    void*               m_jplayer;
+    av_player_callback  m_cbk;
 
+    av_read_input*      m_read_in;
     av_audio_decoder*   m_audio_decoder;
     av_audio_output*    m_audio_out;
     av_video_decoder*   m_video_decoder;

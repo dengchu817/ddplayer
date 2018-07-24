@@ -46,9 +46,8 @@ private:
     Clock m_clock;
     bool m_paused;
     int m_force_refresh;
-    int64_t m_frame_timer;
+    double m_frame_timer;
     int m_step;
-    int m_show_mode;
     SDL_SpeedSampler m_render_fps;
     int m_first_video_frame_rendered;
 };

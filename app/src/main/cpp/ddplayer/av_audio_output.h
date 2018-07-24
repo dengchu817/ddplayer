@@ -32,8 +32,7 @@ public:
 private:
     static void sdl_audio_callback(void* arg, Uint8 *stream, int len);
     void do_sdl_audio_callback(Uint8 *stream, int len);
-    int audio_decode_frame(int *audio_size, int* audio_clock_serial, int64_t* audio_clock);
-    int synchronize_audio( int nb_samples);
+    int audio_decode_frame(int *audio_size, int* audio_clock_serial, double* audio_clock);
     int do_audio_open(int64_t wanted_channel_layout, int wanted_nb_channels, int wanted_sample_rate, struct AudioParams *audio_hw_params);
 private:
     void* m_player;
@@ -44,10 +43,8 @@ private:
     bool m_muted;
     int m_left_volume;
     int m_right_volume;
-    int m_abort_request;
     AudioParams m_audio_src;
     AudioParams m_audio_tgt;
-    bool m_paused;
     SwrContext* m_swr_ctx;
 
     uint8_t *m_audio_buf;

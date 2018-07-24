@@ -44,7 +44,7 @@ void av_audio_decoder::do_cycle() {
         }
 
     } while (ret >= 0 || ret == AVERROR(EAGAIN) || ret == AVERROR_EOF);
-    the_end:
+the_end:
 
     av_frame_free(&frame);
     return;

@@ -11,10 +11,11 @@
 #include <queue>
 
 struct AvMessage{
+    AvMessage(int what_1, int arg1_1, int arg2_1, void* data_1):what(what_1),arg1(arg1_1),arg2(arg2_1),data(data_1){};
     int what;
     int arg1;
     int arg2;
-    jobject obj;
+    void* data;
 };
 
 class av_message_loop {

@@ -1,4 +1,4 @@
-build/
+/build
 
 .DS_Store
 
@@ -22,4 +22,5 @@ local.properties
 # Android Studio
 .idea
 .gradle
-build/
+app/.externalNativeBuild/
+gen_libs/.externalNativeBuild/

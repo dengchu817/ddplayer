@@ -24,7 +24,7 @@ struct ffplayer{
         pf_playback_rate = 1.0f;
         pf_playback_volume_changed = 0;
         pf_playback_volume = 1.0f;
-        framedrop = -1;
+        framedrop = 0;
         overlay_format = SDL_FCC__GLES2;
     }
 

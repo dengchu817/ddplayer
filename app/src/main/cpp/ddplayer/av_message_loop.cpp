@@ -4,7 +4,6 @@
 
 #include <pthread.h>
 #include "av_message_loop.h"
-extern JavaVM* g_jvm;
 
 av_message_loop::av_message_loop():m_state(0){
     pthread_mutex_init(&m_mutex, NULL);
@@ -49,16 +48,12 @@ void av_message_loop::quit(){
 }
 
 void av_message_loop::release(){
-    JavaVM* vm = g_jvm;
-    JNIEnv* env = NULL;
-    if (vm->GetEnv((void**)&env,JNI_VERSION_1_4) != JNI_OK)
-        vm->AttachCurrentThread((JNIEnv**)&env, NULL);
     pthread_mutex_lock(&m_mutex);
     while(m_msg_queue.size() > 0){
         AvMessage* msg = m_msg_queue.front();
         m_msg_queue.pop();
-        if (msg){
-            env->DeleteGlobalRef(msg->obj);
+        if (msg && msg->data){
+            delete msg->data;
             delete msg;
             msg = NULL;
         }

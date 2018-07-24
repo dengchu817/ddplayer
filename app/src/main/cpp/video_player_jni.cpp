@@ -47,9 +47,6 @@ static void Jni_setDataSource(JNIEnv* env, jobject thiz, jstring path, jobjectAr
 
 static void Jni_start(JNIEnv* env, jobject thiz){
     jvideo_player* player = getVideoPlayer(env, thiz);
-    AvMessage* msg = new AvMessage;
-    memset(msg, 0, sizeof(AvMessage));
-    player->putMessage(msg);
 }
 
 static void Jni_nativeSetup(JNIEnv* env, jobject thiz){
@@ -67,6 +64,7 @@ static void Jni_nativeInit(JNIEnv *env){
     g_fields.postEventFromNativeID = env->GetMethodID(clazz, "postEventFromNative", "(IIILjava/lang/Object;)V");
     if (!g_fields.postEventFromNativeID)
         return;
+    jvideo_player::ffmpeg_init();
 }
 
 static void Jni__nativeFinalize(JNIEnv* env, jobject thiz){

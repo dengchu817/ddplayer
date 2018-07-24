@@ -12,7 +12,6 @@ av_video_output::av_video_output(void* player) {
     m_paused = false;
     m_force_refresh = 1;
     m_step = 0;
-    m_show_mode = SHOW_MODE_VIDEO;
 }
 
 av_video_output::~av_video_output() {
@@ -89,7 +88,7 @@ void av_video_output::video_refresh(double *remaining_time) {
 
     ffplayer* ffp = ((av_player*)m_player)->get_ffplayer();
 
-    retry:
+retry:
     if (frame_queue_nb_remaining(m_frame_queue_ref) == 0) {
         // nothing to do, no picture to display in the queue
     } else {
@@ -114,7 +113,7 @@ void av_video_output::video_refresh(double *remaining_time) {
         /* compute nominal last_duration */
         last_duration = vp_duration( lastvp, vp);
         delay = compute_target_delay(last_duration);
-
+        av_log(NULL, AV_LOG_ERROR, "video clock last_duration is = %f, delay = %f\n", last_duration, delay);
         time= av_gettime_relative()/1000000.0;
         if (isnan(m_frame_timer) || time < m_frame_timer)
             m_frame_timer = time;
@@ -152,7 +151,7 @@ void av_video_output::video_refresh(double *remaining_time) {
     }
     display:
     /* display picture */
-    if (!ffp->display_disable && m_force_refresh && m_show_mode == SHOW_MODE_VIDEO && m_frame_queue_ref->rindex_shown)
+    if (!ffp->display_disable && m_force_refresh && m_frame_queue_ref->rindex_shown)
         video_image_display2();
 
     m_force_refresh = 0;
@@ -178,6 +177,7 @@ void av_video_output::video_image_display2() {
 
 void av_video_output::update_video_pts(double pts, int64_t pos, int serial) {
     set_clock(&m_clock, pts, serial);
+    av_log(NULL,AV_LOG_ERROR, "video clock is %f\n",pts);
 }
 
 void av_video_output::stream_toggle_pause() {

@@ -5,31 +5,26 @@
 #include "av_player.h"
 #include "av_player_def.h"
 #include "av_cmdutils.h"
+#include "av_message_loop.h"
 
-extern AVPacket flush_pkt;
-av_player::av_player() {
-    m_read_in = NULL;
+av_player::av_player(void* jplayer) {
     m_url = "";
+    m_read_in = NULL;
     m_ffp = NULL;
     m_format_opts = NULL;
     m_codec_opts = NULL;
     m_sws_dict = NULL;
     m_player_opts = NULL;
     m_swr_opts = NULL;
-    m_av_sync_type = AV_SYNC_AUDIO_MASTER;
+    m_jplayer = jplayer;
 }
 
 av_player::~av_player() {
 
 }
 
-int av_player::init() {
-    avcodec_register_all();
-    av_register_all();
-    avformat_network_init();
-    //av_log_set_callback(ffp_log_callback_brief);
-    av_init_packet(&flush_pkt);
-    flush_pkt.data = (uint8_t *)&flush_pkt;
+int av_player::init(av_player_callback cbk) {
+    m_cbk = cbk;
     m_ffp = new ffplayer();
 
     m_read_in = new av_read_input(this);
@@ -158,7 +153,7 @@ int av_player::stream_component_open(AVFormatContext* ic, int stream_index) {
 
             /* prepare audio output */
             if (m_audio_out)
-                m_audio_out->audio_open(sample_rate, nb_channels,channel_layout);
+                m_audio_out->audio_open(channel_layout,nb_channels, sample_rate);
             if (m_audio_decoder){
                 m_audio_decoder->decoder_init(avctx);
                 m_audio_decoder->start();
@@ -211,6 +206,8 @@ int av_player::do_dd_callback(int type, void* in_data, void** out_data) {
         m_read_in->resume_read();
     } else if (type == DD_GET_VIDEO_SDL_OUT && m_video_out){
         *out_data = get_vout();
+    } else if(type == DD_PUT_MESSAGE && m_jplayer){
+        m_cbk(m_jplayer, in_data);
     }
     return 0;
 }
@@ -232,4 +229,6 @@ SDL_Vout* av_player::get_vout(){
         return m_video_out->get_vout();
     return nullptr;
 }
+
+
 

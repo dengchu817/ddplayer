@@ -18,19 +18,20 @@ public:
     ~jvideo_player();
 
 public:
+    static void ffmpeg_init();
     void start(std::string url);
     void setsurface(JNIEnv* env, jobject obj);
     void release();
-    void putMessage(AvMessage* msg);
-
-public:
+private:
     void do_cycle();
+    static int play_callback(void* user, void* in_data);
+    void do_play_callback(void* in_data);
+    static void ffp_log_callback(void *ptr, int level, const char *fmt, va_list vl);
 private:
     jobject m_object;//java对象
     jclass m_class;
     av_message_loop* m_msg_loop;
     av_player* player;
 };
-
 
 #endif //SIMPLE_PLAYER_VIDEOPLAYER_H

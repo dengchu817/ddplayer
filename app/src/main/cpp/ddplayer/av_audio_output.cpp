@@ -15,11 +15,9 @@ av_audio_output::av_audio_output(void* player) {
     m_frame_queue_ref = NULL;
     m_left_volume = 1;
     m_right_volume = 1;
-    m_abort_request = 0;
     m_audio_buf_index = 0;
     m_audio_buf_index = 0;
     m_muted = false;
-    m_paused = false;
 }
 
 av_audio_output::~av_audio_output() {
@@ -87,8 +85,6 @@ int av_audio_output::do_audio_open(int64_t wanted_channel_layout, int wanted_nb_
     wanted_spec.userdata = this;
     while (SDL_AoutOpenAudio(m_aout, &wanted_spec, &spec) < 0) {
         /* avoid infinity loop on exit. --by bbcallen */
-        if (m_abort_request)
-            return -1;
         av_log(NULL, AV_LOG_WARNING, "SDL_OpenAudio (%d channels, %d Hz): %s\n",
                wanted_spec.channels, wanted_spec.freq, SDL_GetError());
         wanted_spec.channels = next_nb_channels[FFMIN(7, wanted_spec.channels)];
@@ -143,7 +139,7 @@ void av_audio_output::sdl_audio_callback(void *arg, Uint8 *stream, int len) {
 void av_audio_output::do_sdl_audio_callback(Uint8 *stream, int len) {
 
     int audio_size, audio_clock_serial, len1;
-    int64_t audio_clock;
+    double audio_clock;
     ffplayer* ffp = ((av_player*)m_player)->get_ffplayer();
     int64_t audio_callback_time = av_gettime_relative();
 
@@ -190,20 +186,16 @@ void av_audio_output::do_sdl_audio_callback(Uint8 *stream, int len) {
     if (!isnan(audio_clock)) {
         set_clock_at(&m_clock, audio_clock - (double)(audio_write_buf_size) / m_audio_tgt.bytes_per_sec - SDL_AoutGetLatencySeconds(m_aout), audio_clock_serial, audio_callback_time / 1000000.0);
         //sync_clock_to_slave(&is->extclk, &is->audclk);
+        av_log(NULL,AV_LOG_ERROR, "audio clock is %f\n", audio_clock - (double)(audio_write_buf_size) / m_audio_tgt.bytes_per_sec - SDL_AoutGetLatencySeconds(m_aout) );
     }
     return;
 }
 
-int av_audio_output::audio_decode_frame(int *audio_size, int* audio_clock_serial, int64_t* audio_clock)
-{
+int av_audio_output::audio_decode_frame(int *audio_size, int* audio_clock_serial, double* audio_clock) {
     int data_size, resampled_data_size;
     int64_t dec_channel_layout;
-    av_unused double audio_clock0;
     int wanted_nb_samples;
     Frame *af;
-
-    if (m_paused)
-        return -1;
 
     do {
         if (!(af = frame_queue_peek_readable(m_frame_queue_ref)))
@@ -219,7 +211,7 @@ int av_audio_output::audio_decode_frame(int *audio_size, int* audio_clock_serial
     dec_channel_layout =
             (af->frame->channel_layout && af->frame->channels == av_get_channel_layout_nb_channels(af->frame->channel_layout)) ?
             af->frame->channel_layout : av_get_default_channel_layout(af->frame->channels);
-    wanted_nb_samples = synchronize_audio(af->frame->nb_samples);
+    wanted_nb_samples = af->frame->nb_samples;
 
     if (af->frame->format        != m_audio_src.fmt            ||
         dec_channel_layout       != m_audio_src.channel_layout ||
@@ -281,54 +273,14 @@ int av_audio_output::audio_decode_frame(int *audio_size, int* audio_clock_serial
         resampled_data_size = data_size;
     }
     *audio_size = resampled_data_size;
-    audio_clock0 = *audio_clock;
     /* update the audio clock with the pts */
     if (!isnan(af->pts))
         *audio_clock = af->pts + (double) af->frame->nb_samples / af->frame->sample_rate;
     else
         *audio_clock = NAN;
+
     *audio_clock_serial = af->serial;
     return resampled_data_size;
-}
-
-int av_audio_output::synchronize_audio(int nb_samples) {
-    int wanted_nb_samples = nb_samples;
-
-//    /* if not master, then we try to remove or add samples to correct the clock */
-//    if (get_master_sync_type(is) != AV_SYNC_AUDIO_MASTER) {
-//        double diff, avg_diff;
-//        int min_nb_samples, max_nb_samples;
-//
-//        diff = get_av_clock(&is->audclk) - get_master_clock(is);
-//
-//        if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD) {
-//            is->audio_diff_cum = diff + is->audio_diff_avg_coef * is->audio_diff_cum;
-//            if (is->audio_diff_avg_count < AUDIO_DIFF_AVG_NB) {
-//                /* not enough measures to have a correct estimate */
-//                is->audio_diff_avg_count++;
-//            } else {
-//                /* estimate the A-V difference */
-//                avg_diff = is->audio_diff_cum * (1.0 - is->audio_diff_avg_coef);
-//
-//                if (fabs(avg_diff) >= is->audio_diff_threshold) {
-//                    wanted_nb_samples = nb_samples + (int)(diff * is->audio_src.freq);
-//                    min_nb_samples = ((nb_samples * (100 - SAMPLE_CORRECTION_PERCENT_MAX) / 100));
-//                    max_nb_samples = ((nb_samples * (100 + SAMPLE_CORRECTION_PERCENT_MAX) / 100));
-//                    wanted_nb_samples = av_clip(wanted_nb_samples, min_nb_samples, max_nb_samples);
-//                }
-//                av_log(NULL, AV_LOG_TRACE, "diff=%f adiff=%f sample_diff=%d apts=%0.3f %f\n",
-//                       diff, avg_diff, wanted_nb_samples - nb_samples,
-//                       is->audio_clock, is->audio_diff_threshold);
-//            }
-//        } else {
-//            /* too big difference : may be initial PTS errors, so
-//               reset A-V filter */
-//            is->audio_diff_avg_count = 0;
-//            is->audio_diff_cum       = 0;
-//        }
-//    }
-
-    return wanted_nb_samples;
 }
 
 

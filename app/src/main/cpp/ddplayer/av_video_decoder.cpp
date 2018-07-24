@@ -5,6 +5,8 @@
 #include "av_video_decoder.h"
 #include "av_clock.h"
 #include "av_frame_queue.h"
+#include "av_message.h.h"
+#include "av_message_loop.h"
 
 av_video_decoder::av_video_decoder(void* player) :av_decoder_util(player){
 
@@ -21,18 +23,13 @@ void av_video_decoder::start(AVFormatContext* ic, AVStream* st) {
     start_thread();
 }
 
-int av_video_decoder::get_video_frame(AVFrame *frame)
-{
+int av_video_decoder::get_video_frame(AVFrame *frame) {
     int got_picture;
 
     if ((got_picture = decoder_decode_frame(&m_d, frame, NULL)) < 0)
         return -1;
 
     if (got_picture) {
-        double dpts = NAN;
-
-        if (frame->pts != AV_NOPTS_VALUE)
-            dpts = av_q2d(m_st->time_base) * frame->pts;
 
         frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(m_ic, m_st, frame);
     }
@@ -71,8 +68,7 @@ void av_video_decoder::alloc_picture(int frame_format) {
     SDL_UnlockMutex(m_frame_queue.mutex);
 }
 
-int av_video_decoder::queue_picture( AVFrame *src_frame, double pts, double duration, int64_t pos, int serial)
-{
+int av_video_decoder::queue_picture( AVFrame *src_frame, double pts, double duration, int64_t pos, int serial) {
     Frame *vp;
 
     if (!(vp = frame_queue_peek_writable(&m_frame_queue)))
@@ -86,8 +82,11 @@ int av_video_decoder::queue_picture( AVFrame *src_frame, double pts, double dura
         vp->height != src_frame->height ||
         vp->format != src_frame->format) {
 
-//        if (vp->width != src_frame->width || vp->height != src_frame->height)
-//            ffp_notify_msg3(ffp, FFP_MSG_VIDEO_SIZE_CHANGED, src_frame->width, src_frame->height);
+        if (vp->width != src_frame->width || vp->height != src_frame->height){
+            AvMessage* msg = new AvMessage(FFP_MSG_VIDEO_SIZE_CHANGED, src_frame->width,src_frame->height,
+                                           nullptr);
+            m_cbk(m_player, DD_PUT_MESSAGE, msg, NULL);
+        }
 
         vp->allocated = 0;
         vp->width = src_frame->width;

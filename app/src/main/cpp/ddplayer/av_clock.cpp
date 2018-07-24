@@ -54,19 +54,10 @@ void sync_clock_to_slave(Clock *c, Clock *slave)
 }
 
 int get_master_sync_type(av_player* player) {
-    if (player->m_av_sync_type == AV_SYNC_VIDEO_MASTER) {
-        if (player->get_video_clock())
-            return AV_SYNC_VIDEO_MASTER;
-        else
-            return AV_SYNC_AUDIO_MASTER;
-    } else if (player->m_av_sync_type == AV_SYNC_AUDIO_MASTER) {
-        if (player->get_audio_clock())
-            return AV_SYNC_AUDIO_MASTER;
-        else
-            return AV_SYNC_EXTERNAL_CLOCK;
-    } else {
+    if (player->get_audio_clock())
+        return AV_SYNC_AUDIO_MASTER;
+    else
         return AV_SYNC_EXTERNAL_CLOCK;
-    }
 }
 
 /* get the current master clock value */

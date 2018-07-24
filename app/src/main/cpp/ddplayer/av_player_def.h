@@ -19,17 +19,7 @@ extern "C"{
 };
 #endif
 
-////////////////////////////////////message/////////////////////////
-#define VIDEOPLAYER_INFO                        10000
-#define VIDEOPLAYER_INFO_BUFFERING_START        10001
-#define VIDEOPLAYER_INFO_BUFFERING_END          10002
-#define VIDEOPLAYER_INFO_VIDEO_FIRST_RENDERED   10003
-
-#define VIDEOPLAYER_ERROR                       20000
-#define VIDEOPLAYER_ERROR_DECODER               20001
-#define VIDEOPLAYER_ERROR_NET                   20002
-#define VIDEOPLAYER_ERROR_UNKNOW                20003
-
+////////////////////////////////////size/////////////////////////
 
 // #define VIDEO_PICTURE_QUEUE_SIZE 3
 #define VIDEO_PICTURE_QUEUE_SIZE_MIN        (3)
@@ -50,13 +40,14 @@ extern "C"{
 
 ///////////////////////////////callback///////////////////////////////////////
 typedef int(*dd_callback)(void* player, int type, void* in_data, void** out_data);
+typedef int(*av_player_callback)(void* user, void* in_data);
 #define DD_CONTINUE_READ                            1
 #define DD_FIND_AUDIO_STREAM                        2
 #define DD_FIND_VIDEO_STREAM                        3
 #define DD_READ_AUDIO_FRAME                         4
 #define DD_READ_VIDEO_FRAME                         5
 #define DD_GET_VIDEO_SDL_OUT                        6
-#define DD_GET_VIDEO_FRAMEQUEUE                     8
+#define DD_PUT_MESSAGE                              7
 #define DD_GET_VIDEO_PACKETQUEUE                    9
 ///////////////////////////////audioout///////////////////////////////////////
 typedef struct AudioParams {
